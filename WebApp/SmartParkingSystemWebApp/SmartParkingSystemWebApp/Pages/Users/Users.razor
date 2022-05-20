@@ -1,0 +1,157 @@
+﻿@page "/Users"
+@inject HttpClient Http
+@inject IToastService toastService
+<h1 aria-label="kullanıcılar">KULLANICILAR</h1>
+
+@*<button class="btn btn-dark" @onclick="@show">yeni ekle</button>
+<br />*@
+
+<table class="table table-striped">
+    <thead class="thead-dark">
+        <tr>
+            <th aria-label="Kullanıcı Adı">Kullanıcı Adı</th>
+            <th aria-label="Ad">Ad</th>
+            <th aria-label="Soyad">Soyad</th>
+            <th aria-label="Admin">Admin</th>
+            <th aria-label="Sil">Sil</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var kullanici in kullaniciListesi)
+        {
+        <tr>
+            <td aria-label="@kullanici.KullaniciAdi">@kullanici.KullaniciAdi</td>
+            <td aria-label="@kullanici.Ad">@kullanici.Ad</td>
+            <td aria-label="@kullanici.Soyad">@kullanici.Soyad</td>
+            <td aria-label="@kullanici.IsAdmin.ToString()">@kullanici.IsAdmin.ToString()</td>
+            <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Sil(kullanici.Id)">Sil</button></td>
+        </tr>
+        }
+    </tbody>
+</table>
+<br />
+<hr />
+
+
+<div class="container-fluid h-100 " id="kullaniciEkle">
+    <div class="row justify-content-start align-items-baseline h-100">
+        <div class="col col-sm-6 col-lg-4 col-xl-3">
+            @*<img src="images/recycle-bin.png" />*@
+
+
+            <EditForm Model="@kullanici" OnValidSubmit="Ekle">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+
+                <h5 aria-label="Yeni kullanıcı ekle">Yeni kullanıcı ekle</h5>
+
+                <div class="form-group">
+                    <InputText @bind-Value="kullanici.Ad" class="form-control form-control-" type="text" placeholder="Ad" />
+                </div>
+
+
+                <div class="form-group">
+                    <InputText @bind-Value="kullanici.Soyad" class="form-control form-control" type="text" placeholder="Soyad" />
+                </div>
+
+                <div class="form-group">
+                    <InputText @bind-Value="kullanici.KullaniciAdi" class="form-control form-control" type="text" placeholder="Kullanıcı Adı" />
+                </div>
+
+                <div class="form-group">
+                    <InputText @bind-Value="kullanici.Sifre" class="form-control form-control" type="password" placeholder="Şifre" />
+                </div>
+
+                <div class="form-group">
+                    <InputText @bind-Value="kullanici.ConfirmPassword" class="form-control form-control" type="password" placeholder="Şifre (Tekrar)" />
+                </div>
+
+
+                <div class="form-group">
+                    <label>Bölge</label>
+                    <InputSelect @bind-Value="kullanici.BolgeId" class="form-control form-control" type="text" placeholder="Kullanıcı Adı">
+                        @foreach (var item in bolgeListesi)
+                        {
+                        <option @key="item.BolgeAdi" value="@item.Id">@item.BolgeAdi</option>
+
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="form-group">
+                    <label>Admin</label>
+                    <InputCheckbox @bind-Value="kullanici.IsAdmin" class="form-check" />
+                </div>
+
+                <div class="form-group">
+                    <button class="btn btn-dark btn-block" aria-label="ekle" type="submit">Ekle</button>
+                </div>
+
+            </EditForm>
+        </div>
+    </div>
+
+</div>
+
+
+
+@code {
+    private List<User>
+    kullaniciListesi = new List<User>();
+    private List<BolgeViewModel>
+    bolgeListesi = new List<BolgeViewModel>();
+    private KullaniciEkleViewModel kullanici = new KullaniciEkleViewModel();
+
+    [CascadingParameter] public IModalService Modal { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<User>>("api/Kullanici/Kullanicilar");
+        kullaniciListesi = result.ToList();
+
+        var bolgeler = await Http.GetFromJsonAsync<List<User>>("api/Bolge/Bolgeler");
+        bolgeListesi = bolgeler.ToList();
+
+        if (bolgeListesi.Count > 0)
+            kullanici.BolgeId = bolgeListesi[0].Id;
+
+    }
+
+    public async Task Ekle()
+    {
+        var result = await Http.PostAsJsonAsync("api/Kullanici/Ekle", kullanici);
+
+        if (result.IsSuccessStatusCode)
+        {
+            var result2 = await Http.GetFromJsonAsync<List<User>>("api/Kullanici/Kullanicilar");
+            kullaniciListesi = result2.ToList();
+            kullanici = new KullaniciEkleViewModel();
+            if (bolgeListesi.Count > 0)
+                kullanici.BolgeId = bolgeListesi[0].Id;
+
+            toastService.ShowSuccess("Kaydedildi.", "BAŞARILI");
+        }
+        else
+        {
+            toastService.ShowError(" Kullanıcı zaten mevcut!", "HATA");
+        }
+    }
+
+    public async Task Sil(Guid id)
+    {
+        var result = await Http.DeleteAsync("api/Kullanici/" + id);
+        if (result.IsSuccessStatusCode)
+        {
+            kullaniciListesi.Remove(kullaniciListesi.FirstOrDefault(x => x.Id == id));
+            toastService.ShowSuccess("Kayıt başarıyla silindi.", "BAŞARILI");
+
+        }
+        else
+        {
+            toastService.ShowError("Kayıt silinemedi.", "HATA");
+        }
+
+    }
+
+}

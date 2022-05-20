@@ -1,0 +1,87 @@
+﻿@layout LoginLayout
+@page "/Giris"
+@inject NavigationManager navManager
+@inject HttpClient Http
+@inject ISessionStorageService sessionStorage
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject IToastService toastService
+
+
+@attribute [AllowAnonymous]
+
+<div class="container-fluid h-100 ">
+    <div class="row justify-content-center align-items-center h-100">
+        <div class="col col-sm-6 col-lg-4 col-xl-3">
+            @*<img src="images/recycle-bin.png" />*@
+
+
+            <EditForm Model="@loginModel" OnValidSubmit="LoginProcess">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <center>
+                    <h2 aria-label="Giriş Yap">Giriş Yap</h2>
+                </center>
+                <br />
+
+
+                <label hidden aria-label="Kullanıcı Adı"></label>
+                <div class="form-group">
+                    <InputText @bind-Value="loginModel.KullaniciAdi" class="form-control form-control-lg" type="text" placeholder="Kullanıcı Adı" />
+                </div>
+
+                <label hidden aria-label="Şifre"></label>
+                <div class="form-group">
+                    <InputText @bind-Value="loginModel.Sifre" class="form-control form-control-lg" type="password" placeholder="Şifre" />
+                </div>
+
+                <div class="form-group">
+                    <button class="btn btn-success btn-block" aria-label="giriş yap" type="submit">Giriş Yap</button>
+                </div>
+
+            </EditForm>
+            @*@if (show)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        Hatalı kullanıcı adı veya şifre!
+                    </div>
+
+                }*@
+        </div>
+    </div>
+
+</div>
+
+
+
+@code{
+    private TokenModel token = new TokenModel();
+    private LoginViewModel loginModel = new LoginViewModel();
+
+    public bool show = false;
+    public async Task LoginProcess()
+    {
+        var result = await Http.PostAsJsonAsync("api/Security/Login", loginModel);
+
+
+        if (result.IsSuccessStatusCode)
+        {
+            token = await result.Content.ReadFromJsonAsync<TokenModel>();
+            await sessionStorage.SetItemAsync("accessToken", token.AccessToken);
+            await sessionStorage.SetItemAsync("refreshToken", token.RefreshToken);
+
+            (authenticationStateProvider as AuthStateProvider).NotifyUserLogin(token.AccessToken);
+
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.AccessToken);
+
+            navManager.NavigateTo("/");
+            toastService.ShowSuccess("Anasayfaya yönlendiriliyorsunuz...", "Giriş Başarılı.");
+
+        }
+        else
+        {
+            toastService.ShowError("Hatalı kullanıcı adı veya şifre!", "Hata!");
+        }
+    }
+
+}

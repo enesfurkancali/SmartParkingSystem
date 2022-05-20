@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
-
+<BlazoredToasts Position="Blazored.Toast.Configuration.ToastPosition.BottomRight"
+                Timeout="4"
+                ShowProgressBar="true" />
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -15,3 +17,30 @@
         </div>
     </div>
 </div>
+
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+
+    [Inject]
+    NavigationManager navManager { get; set; }
+
+    private String info = "Giriş Yapılmadı";
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        var authState = await authenticationState;
+
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            info = authState.User.Claims.Where(i => i.Type == "KullaniciAdi").Select(X => X.Value).FirstOrDefault();
+        }
+        else
+        {
+            navManager.NavigateTo("/Giris");
+        }
+
+    }
+}

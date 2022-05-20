@@ -1,0 +1,22 @@
+﻿@page "/Cikis"
+@inject ISessionStorageService sessionStorageServices
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject NavigationManager navManager
+@attribute [AllowAnonymous]
+
+
+@code {
+    protected async override Task OnInitializedAsync()
+    {
+        await sessionStorageServices.RemoveItemAsync("accessToken");
+        await sessionStorageServices.RemoveItemAsync("refreshToken");
+
+
+        (authenticationStateProvider as AuthStateProvider).NotifyUserLogout();
+
+        Http.DefaultRequestHeaders.Authorization = null;
+
+        navManager.NavigateTo("/Giris");
+    }
+
+}
