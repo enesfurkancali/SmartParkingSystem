@@ -1,11 +1,10 @@
 ﻿@layout LoginLayout
-@page "/Giris"
+@page "/Login"
 @inject NavigationManager navManager
 @inject HttpClient Http
-@inject ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject AuthenticationStateProvider authenticationStateProvider
 @inject IToastService toastService
-
 
 @attribute [AllowAnonymous]
 
@@ -27,16 +26,16 @@
 
                 <label hidden aria-label="Kullanıcı Adı"></label>
                 <div class="form-group">
-                    <InputText @bind-Value="loginModel.KullaniciAdi" class="form-control form-control-lg" type="text" placeholder="Kullanıcı Adı" />
+                    <InputText @bind-Value="loginModel.UserName" class="form-control form-control-lg" type="text" placeholder="Kullanıcı Adı" />
                 </div>
 
                 <label hidden aria-label="Şifre"></label>
                 <div class="form-group">
-                    <InputText @bind-Value="loginModel.Sifre" class="form-control form-control-lg" type="password" placeholder="Şifre" />
+                    <InputText @bind-Value="loginModel.Password" class="form-control form-control-lg" type="password" placeholder="Şifre" />
                 </div>
 
                 <div class="form-group">
-                    <button class="btn btn-success btn-block" aria-label="giriş yap" type="submit">Giriş Yap</button>
+                    <button class="btn btn-warning btn-block" aria-label="giriş yap" type="submit">Giriş Yap</button>
                 </div>
 
             </EditForm>
@@ -59,6 +58,15 @@
     private LoginViewModel loginModel = new LoginViewModel();
 
     public bool show = false;
+
+    public class LoginViewModel
+    {
+        [Required]
+        public string UserName { get; set; }
+        [Required]
+        public string Password { get; set; }
+
+    }
     public async Task LoginProcess()
     {
         var result = await Http.PostAsJsonAsync("api/Security/Login", loginModel);

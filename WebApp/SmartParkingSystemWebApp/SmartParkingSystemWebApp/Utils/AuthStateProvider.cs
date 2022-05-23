@@ -57,21 +57,18 @@ namespace SmartParkingSystemWebApp.Utils
 
         private ClaimsIdentity GetClaims(string token)
         {
-            string KullaniciAdi = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "KullaniciAdi").Value;
-            string Ad = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "Ad").Value;
-            string Soyad = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "Soyad").Value;
+            string UserName = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "UserName").Value;
+            string Name = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "Name").Value;
+            string Surname = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "Surname").Value;
             string Id = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "Id").Value;
-            string IsAdmin = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "IsAdmin").Value;
-            string BolgeId = tokenHandler.ReadJwtToken(token).Claims.First(claim => claim.Type == "BolgeId").Value;
+           
 
 
             var claims = new ClaimsIdentity(new[] {
-                new Claim("KullaniciAdi", KullaniciAdi, ClaimValueTypes.String),
-                new Claim("Ad", Ad, ClaimValueTypes.String),
-                new Claim("Soyad", Soyad , ClaimValueTypes.String),
-                new Claim("Id", Id, ClaimValueTypes.String),
-                new Claim("IsAdmin", IsAdmin, ClaimValueTypes.Boolean),
-                new Claim("BolgeId", BolgeId, ClaimValueTypes.String)
+                new Claim("UserName", UserName, ClaimValueTypes.String),
+                new Claim("Name", Name, ClaimValueTypes.String),
+                new Claim("Surname", Surname , ClaimValueTypes.String),
+                new Claim("Id", Id, ClaimValueTypes.String)
             }, "jwtAuthType");
 
 

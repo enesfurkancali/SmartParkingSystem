@@ -17,14 +17,13 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var kullanici in kullaniciListesi)
+        @foreach (var usr in UserList)
         {
         <tr>
-            <td aria-label="@kullanici.KullaniciAdi">@kullanici.KullaniciAdi</td>
-            <td aria-label="@kullanici.Ad">@kullanici.Ad</td>
-            <td aria-label="@kullanici.Soyad">@kullanici.Soyad</td>
-            <td aria-label="@kullanici.IsAdmin.ToString()">@kullanici.IsAdmin.ToString()</td>
-            <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Sil(kullanici.Id)">Sil</button></td>
+            <td aria-label="@usr.Username">@usr.Username</td>
+            <td aria-label="@usr.Name">@usr.Name</td>
+            <td aria-label="@usr.Surname">@usr.Surname</td>
+            <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Sil(usr.Id)">Sil</button></td>
         </tr>
         }
     </tbody>
@@ -39,7 +38,7 @@
             @*<img src="images/recycle-bin.png" />*@
 
 
-            <EditForm Model="@kullanici" OnValidSubmit="Ekle">
+            <EditForm Model="@user" OnValidSubmit="AddUser">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
@@ -47,42 +46,27 @@
                 <h5 aria-label="Yeni kullanıcı ekle">Yeni kullanıcı ekle</h5>
 
                 <div class="form-group">
-                    <InputText @bind-Value="kullanici.Ad" class="form-control form-control-" type="text" placeholder="Ad" />
+                    <InputText @bind-Value="user.Name" class="form-control form-control-" type="text" placeholder="Ad" />
                 </div>
 
 
                 <div class="form-group">
-                    <InputText @bind-Value="kullanici.Soyad" class="form-control form-control" type="text" placeholder="Soyad" />
+                    <InputText @bind-Value="user.Surname" class="form-control form-control" type="text" placeholder="Soyad" />
                 </div>
 
                 <div class="form-group">
-                    <InputText @bind-Value="kullanici.KullaniciAdi" class="form-control form-control" type="text" placeholder="Kullanıcı Adı" />
+                    <InputText @bind-Value="user.Username" class="form-control form-control" type="text" placeholder="Kullanıcı Adı" />
                 </div>
 
                 <div class="form-group">
-                    <InputText @bind-Value="kullanici.Sifre" class="form-control form-control" type="password" placeholder="Şifre" />
+                    <InputText @bind-Value="user.Password" class="form-control form-control" type="password" placeholder="Şifre" />
                 </div>
 
-                <div class="form-group">
-                    <InputText @bind-Value="kullanici.ConfirmPassword" class="form-control form-control" type="password" placeholder="Şifre (Tekrar)" />
-                </div>
+                @*<div class="form-group">
+                    <InputText @bind-Value="user.ConfirmPassword" class="form-control form-control" type="password" placeholder="Şifre (Tekrar)" />
+                </div>*@
 
 
-                <div class="form-group">
-                    <label>Bölge</label>
-                    <InputSelect @bind-Value="kullanici.BolgeId" class="form-control form-control" type="text" placeholder="Kullanıcı Adı">
-                        @foreach (var item in bolgeListesi)
-                        {
-                        <option @key="item.BolgeAdi" value="@item.Id">@item.BolgeAdi</option>
-
-                        }
-                    </InputSelect>
-                </div>
-
-                <div class="form-group">
-                    <label>Admin</label>
-                    <InputCheckbox @bind-Value="kullanici.IsAdmin" class="form-check" />
-                </div>
 
                 <div class="form-group">
                     <button class="btn btn-dark btn-block" aria-label="ekle" type="submit">Ekle</button>
@@ -98,37 +82,30 @@
 
 @code {
     private List<User>
-    kullaniciListesi = new List<User>();
-    private List<BolgeViewModel>
-    bolgeListesi = new List<BolgeViewModel>();
-    private KullaniciEkleViewModel kullanici = new KullaniciEkleViewModel();
+    UserList = new List<User>();
 
-    [CascadingParameter] public IModalService Modal { get; set; }
+    private User user = new User();
+
+    //[CascadingParameter] public IModalService Modal { get; set; }
 
     protected async override Task OnInitializedAsync()
     {
-        var result = await Http.GetFromJsonAsync<List<User>>("api/Kullanici/Kullanicilar");
-        kullaniciListesi = result.ToList();
+        //var result = await Http.GetFromJsonAsync<List<User>>("api/Kullanici/Kullanicilar");
+        //kullaniciListesi = result.ToList();
 
-        var bolgeler = await Http.GetFromJsonAsync<List<User>>("api/Bolge/Bolgeler");
-        bolgeListesi = bolgeler.ToList();
 
-        if (bolgeListesi.Count > 0)
-            kullanici.BolgeId = bolgeListesi[0].Id;
 
     }
 
-    public async Task Ekle()
+    public async Task AddUser()
     {
-        var result = await Http.PostAsJsonAsync("api/Kullanici/Ekle", kullanici);
+        var result = await Http.PostAsJsonAsync("api/Kullanici/Ekle", user);
 
         if (result.IsSuccessStatusCode)
         {
             var result2 = await Http.GetFromJsonAsync<List<User>>("api/Kullanici/Kullanicilar");
-            kullaniciListesi = result2.ToList();
-            kullanici = new KullaniciEkleViewModel();
-            if (bolgeListesi.Count > 0)
-                kullanici.BolgeId = bolgeListesi[0].Id;
+            UserList = result2.ToList();
+            user = new User();
 
             toastService.ShowSuccess("Kaydedildi.", "BAŞARILI");
         }
@@ -143,7 +120,7 @@
         var result = await Http.DeleteAsync("api/Kullanici/" + id);
         if (result.IsSuccessStatusCode)
         {
-            kullaniciListesi.Remove(kullaniciListesi.FirstOrDefault(x => x.Id == id));
+            UserList.Remove(UserList.FirstOrDefault(x => x.Id == id));
             toastService.ShowSuccess("Kayıt başarıyla silindi.", "BAŞARILI");
 
         }

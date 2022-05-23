@@ -1,15 +1,20 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using SmartParkingSystemAPI.Context;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace SmartParkingSystem
 {
@@ -25,8 +30,37 @@ namespace SmartParkingSystem
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
+             AddJwtBearer(opt =>
+             {
+                 opt.TokenValidationParameters = new TokenValidationParameters
+                 {
+                     ValidateAudience = true,
+                     ValidateIssuer = true,
+                     ValidateLifetime = true,
+                     ValidateIssuerSigningKey = true,
+                     ValidIssuer = Configuration["Token:Issuer"],
+                     ValidAudience = Configuration["Token:Audience"],
+                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Token:SecurityKey"])),
+                     ClockSkew = TimeSpan.Zero
+
+                 };
+
+             });
+            //services.AddCors(options => options.AddDefaultPolicy(policy =>
+            // policy.AllowCredentials().AllowAnyHeader().AllowAnyMethod().SetIsOriginAllowed(x => true)));
+
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(builder =>
+                builder.WithOrigins("http://localhost:27535")
+                       .AllowAnyMethod()
+                       .AllowAnyHeader());
+            });
 
             services.AddControllers();
+            services.AddDbContext<SmartParkingSystemContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Default")));
+            services.AddDbContext<SecurityContext>(options => options.UseInMemoryDatabase(databaseName: "SecurityDB"));
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SmartParkingSystem", Version = "v1" });
@@ -45,6 +79,7 @@ namespace SmartParkingSystem
 
             app.UseRouting();
 
+            app.UseCors();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

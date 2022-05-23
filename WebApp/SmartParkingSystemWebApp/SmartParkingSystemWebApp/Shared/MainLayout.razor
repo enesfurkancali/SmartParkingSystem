@@ -35,11 +35,11 @@
 
         if (authState.User.Identity.IsAuthenticated)
         {
-            info = authState.User.Claims.Where(i => i.Type == "KullaniciAdi").Select(X => X.Value).FirstOrDefault();
+            info = authState.User.Claims.Where(i => i.Type == "UserName").Select(X => X.Value).FirstOrDefault();
         }
         else
         {
-            navManager.NavigateTo("/Giris");
+            navManager.NavigateTo("/Login");
         }
 
     }

@@ -1,4 +1,4 @@
-﻿@page "/Cikis"
+﻿@page "/Logout"
 @inject ISessionStorageService sessionStorageServices
 @inject AuthenticationStateProvider authenticationStateProvider
 @inject NavigationManager navManager
@@ -16,7 +16,7 @@
 
         Http.DefaultRequestHeaders.Authorization = null;
 
-        navManager.NavigateTo("/Giris");
+        navManager.NavigateTo("/Login");
     }
 
 }
