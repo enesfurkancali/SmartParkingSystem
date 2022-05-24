@@ -12,7 +12,6 @@
             <th aria-label="Kullanıcı Adı">Kullanıcı Adı</th>
             <th aria-label="Ad">Ad</th>
             <th aria-label="Soyad">Soyad</th>
-            <th aria-label="Admin">Admin</th>
             <th aria-label="Sil">Sil</th>
         </tr>
     </thead>
@@ -90,8 +89,8 @@
 
     protected async override Task OnInitializedAsync()
     {
-        //var result = await Http.GetFromJsonAsync<List<User>>("api/Kullanici/Kullanicilar");
-        //kullaniciListesi = result.ToList();
+        var result = await Http.GetFromJsonAsync<List<User>>("api/User/AllUsers");
+        UserList = result.ToList();
 
 
 
@@ -99,11 +98,11 @@
 
     public async Task AddUser()
     {
-        var result = await Http.PostAsJsonAsync("api/Kullanici/Ekle", user);
+        var result = await Http.PostAsJsonAsync("api/User/Add", user);
 
         if (result.IsSuccessStatusCode)
         {
-            var result2 = await Http.GetFromJsonAsync<List<User>>("api/Kullanici/Kullanicilar");
+            var result2 = await Http.GetFromJsonAsync<List<User>>("api/User/AllUsers");
             UserList = result2.ToList();
             user = new User();
 
@@ -117,7 +116,7 @@
 
     public async Task Sil(Guid id)
     {
-        var result = await Http.DeleteAsync("api/Kullanici/" + id);
+        var result = await Http.DeleteAsync("api/User/" + id);
         if (result.IsSuccessStatusCode)
         {
             UserList.Remove(UserList.FirstOrDefault(x => x.Id == id));
