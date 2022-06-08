@@ -3,26 +3,41 @@
 @inject IToastService toastService
 <h1 aria-label="kullanıcılar">Kayıtlar</h1>
 
-@*<button class="btn btn-dark" @onclick="@show">yeni ekle</button>
-    <br />*@
+<div class="form-group">
+    <select @bind="@isLive" class="form-control form-control" placeholder="Type">
+        <option key="tum" onclick="@isLive=false">Tüm</option>
+        <option key="Canli" onclick="@isLive=true">Canlı</option>
+
+    </select>
+    <br />
+
+    <button class="btn btn-outline-success" aria-label="bölge seç" @onclick="selectedTypeChanged">Seç</button>
+</div>
+
+@*<div class="form-check form-switch">
+    <input class="form-check-input" @bind="@isLive" type="checkbox" role="switch" id="flexSwitchCheckChecked" >
+    <label class="form-check-label" for="flexSwitchCheckChecked">Checked switch checkbox input</label>
+</div>*@
 
 <table class="table table-striped">
     <thead class="thead-dark">
         <tr>
-            <th aria-label="Kullanıcı Adı">Kullanıcı Adı</th>
-            <th aria-label="Ad">Ad</th>
-            <th aria-label="Soyad">Soyad</th>
+            <th aria-label="Plaka">Plaka</th>
+            <th aria-label="Giriş Saati">Giriş Saati</th>
+            <th aria-label="Çıkış Saati">Çıkış Saati</th>
+            <th aria-label="Ücret">Ücret</th>
             <th aria-label="Sil">Sil</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var usr in UserList)
+        @foreach (var entry in EntryList)
         {
             <tr>
-                <td aria-label="@usr.Username">@usr.Username</td>
-                <td aria-label="@usr.Name">@usr.Name</td>
-                <td aria-label="@usr.Surname">@usr.Surname</td>
-                <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Delete(usr.Id)">Sil</button></td>
+                <td aria-label="@entry.Plate">@entry.Plate</td>
+                <td aria-label="@entry.CheckinDate">@entry.CheckinDate</td>
+                <td aria-label="@entry.CheckoutDate">@entry.CheckoutDate</td>
+                <td aria-label="@entry.Price">@entry.Price</td>
+                <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Delete(entry.Id)">Sil</button></td>
             </tr>
         }
     </tbody>
@@ -31,57 +46,15 @@
 <hr />
 
 
-<div class="container-fluid h-100 " id="kullaniciEkle">
-    <div class="row justify-content-start align-items-baseline h-100">
-        <div class="col col-sm-6 col-lg-4 col-xl-3">
-            @*<img src="images/recycle-bin.png" />*@
-
-
-            <EditForm Model="@entry" OnValidSubmit="AddEntry">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-
-                <h5 aria-label="Yeni kullanıcı ekle">Yeni kullanıcı ekle</h5>
-
-                <div class="form-group">
-                    <InputText @bind-Value="user.Name" class="form-control form-control-" type="text" placeholder="Ad" />
-                </div>
-
-
-                <div class="form-group">
-                    <InputText @bind-Value="user.Surname" class="form-control form-control" type="text" placeholder="Soyad" />
-                </div>
-
-                <div class="form-group">
-                    <InputText @bind-Value="user.Username" class="form-control form-control" type="text" placeholder="Kullanıcı Adı" />
-                </div>
-
-                <div class="form-group">
-                    <InputText @bind-Value="user.Password" class="form-control form-control" type="password" placeholder="Şifre" />
-                </div>
-
-                @*<div class="form-group">
-                        <InputText @bind-Value="user.ConfirmPassword" class="form-control form-control" type="password" placeholder="Şifre (Tekrar)" />
-                    </div>*@
-
-
-
-                <div class="form-group">
-                    <button class="btn btn-dark btn-block" aria-label="ekle" type="submit">Ekle</button>
-                </div>
-
-            </EditForm>
-        </div>
-    </div>
-
-</div>
 
 
 
 @code {
     private List<Entry>
     EntryList = new List<Entry>();
+    private List<Entry> currentEntryList  = new List<Entry>();
+
+    public bool isLive{ get; set; }
 
     private Entry entry = new Entry();
 
@@ -89,8 +62,10 @@
 
     protected async override Task OnInitializedAsync()
     {
+        isLive = true;
         var result = await Http.GetFromJsonAsync<List<Entry>>("api/Entry/AllEntries");
         EntryList = result.ToList();
+        selectedTypeChanged();
 
 
 
@@ -126,6 +101,18 @@
         else
         {
             toastService.ShowError("Kayıt silinemedi.", "HATA");
+        }
+
+    }
+    private void selectedTypeChanged()
+    {
+        if (isLive == true)
+        {
+            currentEntryList= EntryList.Where(x => x.CheckoutDate == null).ToList();
+        }
+        else
+        {
+            currentEntryList = EntryList;
         }
 
     }
