@@ -1,10 +1,10 @@
-﻿@page "/Users"
+﻿@page "/Entries"
 @inject HttpClient Http
 @inject IToastService toastService
-<h1 aria-label="kullanıcılar">KULLANICILAR</h1>
+<h1 aria-label="kullanıcılar">Kayıtlar</h1>
 
 @*<button class="btn btn-dark" @onclick="@show">yeni ekle</button>
-<br />*@
+    <br />*@
 
 <table class="table table-striped">
     <thead class="thead-dark">
@@ -18,12 +18,12 @@
     <tbody>
         @foreach (var usr in UserList)
         {
-        <tr>
-            <td aria-label="@usr.Username">@usr.Username</td>
-            <td aria-label="@usr.Name">@usr.Name</td>
-            <td aria-label="@usr.Surname">@usr.Surname</td>
-            <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Delete(usr.Id)">Sil</button></td>
-        </tr>
+            <tr>
+                <td aria-label="@usr.Username">@usr.Username</td>
+                <td aria-label="@usr.Name">@usr.Name</td>
+                <td aria-label="@usr.Surname">@usr.Surname</td>
+                <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Delete(usr.Id)">Sil</button></td>
+            </tr>
         }
     </tbody>
 </table>
@@ -37,7 +37,7 @@
             @*<img src="images/recycle-bin.png" />*@
 
 
-            <EditForm Model="@user" OnValidSubmit="AddUser">
+            <EditForm Model="@entry" OnValidSubmit="AddEntry">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
@@ -62,8 +62,8 @@
                 </div>
 
                 @*<div class="form-group">
-                    <InputText @bind-Value="user.ConfirmPassword" class="form-control form-control" type="password" placeholder="Şifre (Tekrar)" />
-                </div>*@
+                        <InputText @bind-Value="user.ConfirmPassword" class="form-control form-control" type="password" placeholder="Şifre (Tekrar)" />
+                    </div>*@
 
 
 
@@ -80,46 +80,46 @@
 
 
 @code {
-    private List<User>
-    UserList = new List<User>();
+    private List<Entry>
+    EntryList = new List<Entry>();
 
-    private User user = new User();
+    private Entry entry = new Entry();
 
     //[CascadingParameter] public IModalService Modal { get; set; }
 
     protected async override Task OnInitializedAsync()
     {
-        var result = await Http.GetFromJsonAsync<List<User>>("api/User/AllUsers");
-        UserList = result.ToList();
+        var result = await Http.GetFromJsonAsync<List<Entry>>("api/Entry/AllEntries");
+        EntryList = result.ToList();
 
 
 
     }
 
-    public async Task AddUser()
+    public async Task AddEntry()
     {
-        var result = await Http.PostAsJsonAsync("api/User/Add", user);
+        var result = await Http.PostAsJsonAsync("api/Entry/Add", entry);
 
         if (result.IsSuccessStatusCode)
         {
-            var result2 = await Http.GetFromJsonAsync<List<User>>("api/User/AllUsers");
-            UserList = result2.ToList();
-            user = new User();
+            var result2 = await Http.GetFromJsonAsync<List<Entry>>("api/Entry/AllUsers");
+            EntryList = result2.ToList();
+            entry = new Entry();
 
             toastService.ShowSuccess("Kaydedildi.", "BAŞARILI");
         }
         else
         {
-            toastService.ShowError(" Kullanıcı zaten mevcut!", "HATA");
+            toastService.ShowError(" Kayıt zaten mevcut!", "HATA");
         }
     }
 
     public async Task Delete(Guid id)
     {
-        var result = await Http.DeleteAsync("api/User/" + id);
+        var result = await Http.DeleteAsync("api/Entry/" + id);
         if (result.IsSuccessStatusCode)
         {
-            UserList.Remove(UserList.FirstOrDefault(x => x.Id == id));
+            EntryList.Remove(EntryList.FirstOrDefault(x => x.Id == id));
             toastService.ShowSuccess("Kayıt başarıyla silindi.", "BAŞARILI");
 
         }

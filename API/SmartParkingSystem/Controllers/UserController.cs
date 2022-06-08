@@ -47,18 +47,13 @@ namespace SmartParkingSystemAPI.Controllers
             var user = _context.Users.SingleOrDefault(x => x.Username== newUser.Username);
             if (user is not null)
                 return BadRequest();
-            user = new User();
-            user.Id = Guid.NewGuid();
-            user.Username= newUser.Username;
-            user.Name= newUser.Name;
-            user.Surname= newUser.Surname;
-            user.Password= newUser.Password;
 
-            _context.Add(user);
+            newUser.Id = Guid.NewGuid();
+      
+            _context.Add(newUser);
             _context.SaveChanges();
 
             return Ok();
-
         }
 
         [HttpPut("{id}")]

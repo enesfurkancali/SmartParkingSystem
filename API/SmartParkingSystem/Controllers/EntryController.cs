@@ -47,18 +47,38 @@ namespace SmartParkingSystemAPI.Controllers
             var entry = _context.Entries.SingleOrDefault(x => x.Plate == newEntry.Plate && x.CheckoutDate == null );
             if (entry is not null)
                 return BadRequest();
-            entry = new Entry();
-            entry.Id = Guid.NewGuid();
-            entry.CheckinDate = newEntry.CheckinDate;
-            entry.CheckoutDate = newEntry.CheckoutDate;
-            entry.Plate = newEntry.Plate;
-            entry.Price = newEntry.Price;
+            
+            newEntry.Id = Guid.NewGuid();
 
-            _context.Add(entry);
+            _context.Add(newEntry);
             _context.SaveChanges();
 
             return Ok();
+        }
+        [HttpPost("AddPlate")]
+        public IActionResult AddPlate([FromBody] string plate)
+        {
+            var entry = _context.Entries.SingleOrDefault(x => x.Plate == plate && x.CheckoutDate == null);
+            if (entry is not null)
+            {
+                entry.CheckoutDate = DateTime.Now;
+                entry.Price = 10; //fiyat hesaplat
+                _context.Update(entry);
+            }
+            else
+            {
+                entry = new Entry();
+                entry.Id = Guid.NewGuid();
+                entry.CheckinDate = DateTime.Now;
+                entry.CheckoutDate = null;
+                entry.Plate = plate;
+                entry.Price = 0;
+                _context.Add(entry);
+            }
 
+            _context.SaveChanges();
+
+            return Ok();
         }
 
         [HttpPut("{id}")]
