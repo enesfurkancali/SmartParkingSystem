@@ -3,6 +3,7 @@ using Blazored.SessionStorage;
 using Blazored.Toast;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,7 @@ namespace SmartParkingSystemWebApp
             builder.RootComponents.Add<App>("#app");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:61818/") });
+            builder.Services.AddTransient<HubConnectionBuilder>();
             builder.Services.AddBlazoredToast();
             builder.Services.AddBlazoredSessionStorage();
             builder.Services.AddBlazoredModal();

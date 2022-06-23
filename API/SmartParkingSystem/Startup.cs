@@ -15,6 +15,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using SmartParkingSystemAPI.Subscription;
+using SmartParkingSystem.Models;
+using SmartParkingSystemAPI.Subscription.Middleware;
+using SmartParkingSystemAPI.Hubs;
 
 namespace SmartParkingSystem
 {
@@ -49,6 +53,7 @@ namespace SmartParkingSystem
              });
             //services.AddCors(options => options.AddDefaultPolicy(policy =>
             // policy.AllowCredentials().AllowAnyHeader().AllowAnyMethod().SetIsOriginAllowed(x => true)));
+            
 
             services.AddCors(options =>
             {
@@ -57,10 +62,12 @@ namespace SmartParkingSystem
                        .AllowAnyMethod()
                        .AllowAnyHeader());
             });
-
+            services.AddSignalR();
             services.AddControllers();
             services.AddDbContext<SmartParkingSystemContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Default")));
             services.AddDbContext<SecurityContext>(options => options.UseInMemoryDatabase(databaseName: "SecurityDB"));
+            services.AddSingleton<DatabaseSubscription<Entry>>();
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SmartParkingSystem", Version = "v1" });
@@ -76,6 +83,10 @@ namespace SmartParkingSystem
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartParkingSystem v1"));
             }
+
+            //Veri tabanýndaki Entry tablosu takibe alýndý
+            app.UseDatabaseSubscription<DatabaseSubscription<Entry>>("Entry");
+
             app.UseAuthentication();
             app.UseRouting();
 
@@ -85,6 +96,7 @@ namespace SmartParkingSystem
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<ParksisHub>("/parksishub");
             });
         }
     }

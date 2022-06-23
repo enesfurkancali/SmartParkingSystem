@@ -2,22 +2,29 @@
 @inject HttpClient Http
 @inject IToastService toastService
 <h1 aria-label="kullanıcılar">Kayıtlar</h1>
-
-<div class="form-group">
-    <select @bind="@isLive" class="form-control form-control" placeholder="Type">
-        <option key="tum" onclick="@isLive=false">Tüm</option>
-        <option key="Canli" onclick="@isLive=true">Canlı</option>
-
-    </select>
-    <br />
-
-    <button class="btn btn-outline-success" aria-label="bölge seç" @onclick="selectedTypeChanged">Seç</button>
+<div class="container">
+    <div class="row">
+        <div class="col-4">
+            <center><p>Kapasite: <b>250</b> </p></center>
+        </div>
+        <div class="col-4">
+            <center>
+                <p>Otoparkta Bulunan Araç Sayısı: <b>@count</b></p>
+            </center>
+        </div>
+        <div class="col-4">
+            <center><p>Otopark Doluluk Oranı: <b>%@(count*10/25)</b> </p></center>
+        </div>
+    </div>
 </div>
 
-@*<div class="form-check form-switch">
-    <input class="form-check-input" @bind="@isLive" type="checkbox" role="switch" id="flexSwitchCheckChecked" >
-    <label class="form-check-label" for="flexSwitchCheckChecked">Checked switch checkbox input</label>
-</div>*@
+<input type="checkbox" hidden class="btn-check" id="btn-check-outlined"  @bind="isLive"autocomplete="off">
+@if (isLive is false)
+    cssClass = "btn-outline-primary";
+else
+    cssClass = "btn-primary";
+<label class="btn @cssClass" for="btn-check-outlined">Otoparktaki Araçları Göster</label>
+
 
 <table class="table table-striped">
     <thead class="thead-dark">
@@ -26,18 +33,23 @@
             <th aria-label="Giriş Saati">Giriş Saati</th>
             <th aria-label="Çıkış Saati">Çıkış Saati</th>
             <th aria-label="Ücret">Ücret</th>
-            <th aria-label="Sil">Sil</th>
+            <th aria-label="Durum">Durum</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var entry in EntryList)
+        @{ selectedTypeChanged(); }
+        @foreach (var entry in currentEntryList)
         {
             <tr>
                 <td aria-label="@entry.Plate">@entry.Plate</td>
                 <td aria-label="@entry.CheckinDate">@entry.CheckinDate</td>
                 <td aria-label="@entry.CheckoutDate">@entry.CheckoutDate</td>
                 <td aria-label="@entry.Price">@entry.Price</td>
-                <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Delete(entry.Id)">Sil</button></td>
+                @if (entry.CheckoutDate is null)
+                    status = "Aktif";
+                else
+                    status = "Pasif";
+                <td>@status</td>
             </tr>
         }
     </tbody>
@@ -52,9 +64,15 @@
 @code {
     private List<Entry>
     EntryList = new List<Entry>();
-    private List<Entry> currentEntryList  = new List<Entry>();
+    private List<Entry> currentEntryList = new List<Entry>();
+    public HubConnection connection { get; set; }
 
-    public bool isLive{ get; set; }
+
+    public bool isLive { get; set; }
+    public string status { get; set; }
+    public string cssClass { get; set; }
+    public double count { get; set; }
+
 
     private Entry entry = new Entry();
 
@@ -65,9 +83,20 @@
         isLive = true;
         var result = await Http.GetFromJsonAsync<List<Entry>>("api/Entry/AllEntries");
         EntryList = result.ToList();
+        count = EntryList.Where(x => x.CheckoutDate == null).Count();
+
+        //currentEntryList = EntryList;    
         selectedTypeChanged();
 
+        connection = new HubConnectionBuilder().WithUrl("http://localhost:61818/parksishub").Build();
+        connection.On<List<Entry>>("recieveMessage", (message) =>
+        {
+            EntryList = message;
+            count = EntryList.Where(x => x.CheckoutDate == null).Count();
 
+            StateHasChanged();
+        });
+        await connection.StartAsync();
 
     }
 
@@ -106,15 +135,22 @@
     }
     private void selectedTypeChanged()
     {
+        //bool.TryParse(args.ToString(), out var result);
+        //isLive = result;
         if (isLive == true)
         {
-            currentEntryList= EntryList.Where(x => x.CheckoutDate == null).ToList();
+            currentEntryList = EntryList.Where(x => x.CheckoutDate == null).ToList();
         }
         else
         {
             currentEntryList = EntryList;
         }
 
+    }
+    void OnLeasingChanged(object args)
+    {
+        bool.TryParse(args.ToString(), out var result);
+        isLive = result;
     }
 
 }
