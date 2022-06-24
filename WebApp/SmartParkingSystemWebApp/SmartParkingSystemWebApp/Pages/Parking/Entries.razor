@@ -1,6 +1,7 @@
 ﻿@page "/Entries"
 @inject HttpClient Http
 @inject IToastService toastService
+@inject IModalService modalService
 <h1 aria-label="kullanıcılar">Kayıtlar</h1>
 <div class="container">
     <div class="row">
@@ -66,7 +67,7 @@ else
     EntryList = new List<Entry>();
     private List<Entry> currentEntryList = new List<Entry>();
     public HubConnection connection { get; set; }
-
+    [CascadingParameter] public IModalService Modal { get; set; }
 
     public bool isLive { get; set; }
     public string status { get; set; }
@@ -94,6 +95,15 @@ else
             EntryList = message;
             count = EntryList.Where(x => x.CheckoutDate == null).Count();
 
+
+            StateHasChanged();
+        });
+        connection.On<string>("recievePlate", (plate) =>
+        {
+            Modal.Show<AddPlate>(plate);
+
+
+            //count = EntryList.Where(x => x.CheckoutDate == null).Count();
             StateHasChanged();
         });
         await connection.StartAsync();
