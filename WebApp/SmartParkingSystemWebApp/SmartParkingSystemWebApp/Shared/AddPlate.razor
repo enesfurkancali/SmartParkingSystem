@@ -2,19 +2,25 @@
 @inject IToastService toastService
 
 <div>
-    <p>@plate plakalı araç çıkış yapmak istiyor.</p>
+    <p>@entry.Plate plakalı araç çıkış yapmak istiyor.</p>
+    @*<p>Süre: @diff.TotalHours.ToString() saat.</p>*@
+    <p>Ücret: @entry.Price ₺</p>
 
-    <button @onclick="()=>Exit(plate)" class="btn btn-primary">Onayla</button>
+    <button @onclick="()=>Exit(entry.Plate)" class="btn btn-primary">Onayla</button>
     <button @onclick="Cancel" class="btn btn-secondary">İptal Et</button>
 </div>
 
 @code { 
     [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
-    [Parameter] public string? plate { get; set; }
-
+    [Parameter] public Entry? entry { get; set; }
+    public TimeSpan diff { get; set; }
     //async Task Close() => await BlazoredModal.CloseAsync(ModalResult.Ok(true));
     async Task Cancel() => await BlazoredModal.CancelAsync();
 
+    protected override void OnInitialized()
+    {
+        diff = (TimeSpan)(entry.CheckoutDate - entry.CheckinDate);
+    }
     public async Task Exit(string plate)
     {
         var result = await Http.PostAsJsonAsync("api/Entry/AddPlate", plate);

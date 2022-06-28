@@ -98,17 +98,17 @@ else
 
             StateHasChanged();
         });
-        connection.On<string>("recievePlate",  (plate) =>
+        connection.On<Entry>("recievePlate",  (entry) =>
         {
-            if (EntryList.Where(x=>x.CheckoutDate==null).Select(x=>x.Plate.Trim()).ToList().Contains(plate.Trim()))
+            if (EntryList.Where(x=>x.CheckoutDate==null).Select(x=>x.Plate.Trim()).ToList().Contains( entry.Plate.Trim()))
             {
                 var parameters = new ModalParameters();
-                parameters.Add("plate",plate);
-                Modal.Show<AddPlate>(plate.Trim(),parameters);
+                parameters.Add("entry",entry);
+                Modal.Show<AddPlate>("Araç Çıkışı",parameters);
             }
             else
             {
-                AddEntry(plate.Trim());
+                AddEntry(entry.Plate.Trim());
             }
 
             StateHasChanged();
