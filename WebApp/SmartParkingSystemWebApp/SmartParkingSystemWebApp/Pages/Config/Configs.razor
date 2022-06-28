@@ -1,6 +1,8 @@
 ﻿@page "/Configs"
 @inject HttpClient Http
 @inject IToastService toastService
+@inject IModalService modalService
+
 <h1 aria-label="Tarife">Tarife</h1>
 
 @*<button class="btn btn-dark" @onclick="@show">yeni ekle</button>
@@ -20,7 +22,7 @@
             <tr>
                 <td aria-label="@c.Name">@c.Name</td>
                 <td aria-label="@c.Value">@c.Value</td>
-                <td><button class="btn btn-primary" aria-label="Güncelle" @onclick="() => Config=c">Güncelle</button></td>
+                <td><button class="btn btn-primary" aria-label="Güncelle" @onclick="() => Update(c)">Güncelle</button></td>
             </tr>
         }
     </tbody>
@@ -29,39 +31,39 @@
 <hr />
 
 
-<!--<div class="container-fluid h-100 " id="kullaniciEkle">
-    <div class="row justify-content-start align-items-baseline h-100">
-        <div class="col col-sm-6 col-lg-4 col-xl-3">-->
-            @*<img src="images/recycle-bin.png" />*@
+@*<div class="container-fluid h-100 " id="kullaniciEkle">
+        <div class="row justify-content-start align-items-baseline h-100">
+            <div class="col col-sm-6 col-lg-4 col-xl-3">
+                <img src="images/recycle-bin.png" />
 
 
-            <!--<EditForm Model="@Config" OnValidSubmit="HandleValidSubmit">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
+                <EditForm Model="@Config" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
 
 
-                <h5 aria-label="Yeni Ayar ekle">Yeni ayar ekle</h5>
+                    <h5 aria-label="Yeni Ayar ekle">Yeni ayar ekle</h5>
 
-                <div class="form-group">
-                    <input @bind="Config.Name" class="form-control form-control-" type="text" placeholder="Name" />
-                </div>
-
-
-                <div class="form-group">
-                    <input @bind="Config.Value" class="form-control form-control" type="number" placeholder="Value" />
-                </div>           
+                    <div class="form-group">
+                        <input @bind="Config.Name" class="form-control form-control-" type="text" placeholder="Name" />
+                    </div>
 
 
+                    <div class="form-group">
+                        <input @bind="Config.Value" class="form-control form-control" type="number" placeholder="Value" />
+                    </div>
 
-                <div class="form-group">
-                    <button class="btn btn-dark btn-block" aria-label="ekle" type="submit">Gönder</button>
-                </div>
 
-            </EditForm>
+
+                    <div class="form-group">
+                        <button class="btn btn-dark btn-block" aria-label="ekle" type="submit">Gönder</button>
+                    </div>
+
+                </EditForm>
+            </div>
         </div>
-    </div>
 
-</div>-->
+    </div>*@
 
 
 
@@ -70,6 +72,10 @@
     ConfigList = new List<Config>();
 
     private Config Config = new Config();
+    [CascadingParameter] public IModalService Modal { get; set; }
+    public HubConnection connection { get; set; }
+
+
 
     //[CascadingParameter] public IModalService Modal { get; set; }
 
@@ -78,70 +84,60 @@
         var result = await Http.GetFromJsonAsync<List<Config>>("api/Config/AllConfigs");
         ConfigList = result.ToList();
 
+        connection = new HubConnectionBuilder().WithUrl("http://localhost:61818/parksishub").Build();
+        connection.On<List<Config>>("recieveMessageConfig", (message) =>
+        {
+            ConfigList = message;
 
+            StateHasChanged();
+        });
+        await connection.StartAsync();
 
     }
 
-    public async Task AddConfig()
+    //public async Task AddConfig()
+    //{
+    //    var result = await Http.PostAsJsonAsync("api/Config/Add", Config);
+
+    //    if (result.IsSuccessStatusCode)
+    //    {
+    //        var result2 = await Http.GetFromJsonAsync<List<Config>>("api/Config/AllConfigs");
+    //        ConfigList = result2.ToList();
+    //        Config = new Config();
+
+    //        toastService.ShowSuccess("Kaydedildi.", "BAŞARILI");
+    //    }
+    //    else
+    //    {
+    //        toastService.ShowError(" Ayar zaten mevcut!", "HATA");
+    //    }
+    //}
+
+
+
+    //public async Task Delete(Guid id)
+    //{
+    //    var result = await Http.DeleteAsync("api/Config/" + id);
+    //    if (result.IsSuccessStatusCode)
+    //    {
+    //        ConfigList.Remove(ConfigList.FirstOrDefault(x => x.Id == id));
+    //        toastService.ShowSuccess("Kayıt başarıyla silindi.", "BAŞARILI");
+
+    //    }
+    //    else
+    //    {
+    //        toastService.ShowError("Kayıt silinemedi.", "HATA");
+    //    }
+
+    //}
+
+    public void Update(Config config)
     {
-        var result = await Http.PostAsJsonAsync("api/Config/Add", Config);
+        var parameters = new ModalParameters();
+        parameters.Add("config", config);
+        var r=Modal.Show<UpdateConfigForm>("Tarife Güncelle", parameters);
 
-        if (result.IsSuccessStatusCode)
-        {
-            var result2 = await Http.GetFromJsonAsync<List<Config>>("api/Config/AllConfigs");
-            ConfigList = result2.ToList();
-            Config = new Config();
-
-            toastService.ShowSuccess("Kaydedildi.", "BAŞARILI");
-        }
-        else
-        {
-            toastService.ShowError(" Ayar zaten mevcut!", "HATA");
-        }
-    }
-
-    public void Fill(Config config)
-    {
-
-    }
-    public void HandleValidSubmit()
-    {
-        if (ConfigList.Contains(Config))
-            Update();
-        else
-            AddConfig();
-    }
-
-    public async Task Delete(Guid id)
-    {
-        var result = await Http.DeleteAsync("api/Config/" + id);
-        if (result.IsSuccessStatusCode)
-        {
-            ConfigList.Remove(ConfigList.FirstOrDefault(x => x.Id == id));
-            toastService.ShowSuccess("Kayıt başarıyla silindi.", "BAŞARILI");
-
-        }
-        else
-        {
-            toastService.ShowError("Kayıt silinemedi.", "HATA");
-        }
-
-    }
-    public async Task Update()
-    {
-        var result = await Http.PutAsJsonAsync("api/Config/" + Config.Id, Config);
-        if (result.IsSuccessStatusCode)
-        {
-            ConfigList = await Http.GetFromJsonAsync<List<Config>>("api/Config/AllConfigs");
-            Config = new Config();
-
-            toastService.ShowSuccess("Kayıt başarıyla güncellendi.", "BAŞARILI");
-        }
-        else
-        {
-            toastService.ShowError("Kayıt güncellenemedi.", "HATA");
-        }
-
+        Config = new Config();
     }
 
 }

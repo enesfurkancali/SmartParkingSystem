@@ -1,12 +1,32 @@
-﻿<div>
-    <p>Please click one of the buttons below to close or cancel the modal.</p>
+﻿@inject HttpClient Http
+@inject IToastService toastService
 
-    <button @onclick="Close" class="btn btn-primary">Close</button>
-    <button @onclick="Cancel" class="btn btn-secondary">Cancel</button>
+<div>
+    <p>@plate plakalı araç çıkış yapmak istiyor.</p>
+
+    <button @onclick="()=>Exit(plate)" class="btn btn-primary">Onayla</button>
+    <button @onclick="Cancel" class="btn btn-secondary">İptal Et</button>
 </div>
 
-@code { [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+@code { 
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+    [Parameter] public string? plate { get; set; }
 
-            async Task Close() => await BlazoredModal.CloseAsync(ModalResult.Ok(true));
-            async Task Cancel() => await BlazoredModal.CancelAsync(); 
+    //async Task Close() => await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+    async Task Cancel() => await BlazoredModal.CancelAsync();
+
+    public async Task Exit(string plate)
+    {
+        var result = await Http.PostAsJsonAsync("api/Entry/AddPlate", plate);
+
+        if (result.IsSuccessStatusCode)
+        {
+            await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+            toastService.ShowSuccess(plate + " plakalı araç otoparktan çıkış yaptı.", "BAŞARILI");
+        }
+        else
+        {
+            toastService.ShowError(plate + " plakalı araç otoparktan çıkış yapamadı.", "HATA");
+        }
     }
+}

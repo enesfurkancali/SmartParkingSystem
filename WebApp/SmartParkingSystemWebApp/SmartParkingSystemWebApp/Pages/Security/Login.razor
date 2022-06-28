@@ -69,27 +69,36 @@
     }
     public async Task LoginProcess()
     {
-        var result = await Http.PostAsJsonAsync("api/Security/Login", loginModel);
-
-
-        if (result.IsSuccessStatusCode)
+        try
         {
-            token = await result.Content.ReadFromJsonAsync<TokenModel>();
-            await sessionStorage.SetItemAsync("accessToken", token.AccessToken);
-            await sessionStorage.SetItemAsync("refreshToken", token.RefreshToken);
+            var result = await Http.PostAsJsonAsync("api/Security/Login", loginModel);
+            if (result.IsSuccessStatusCode)
+            {
+                token = await result.Content.ReadFromJsonAsync<TokenModel>();
+                await sessionStorage.SetItemAsync("accessToken", token.AccessToken);
+                await sessionStorage.SetItemAsync("refreshToken", token.RefreshToken);
 
-            (authenticationStateProvider as AuthStateProvider).NotifyUserLogin(token.AccessToken);
+                (authenticationStateProvider as AuthStateProvider).NotifyUserLogin(token.AccessToken);
 
-            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.AccessToken);
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.AccessToken);
 
-            navManager.NavigateTo("/");
-            toastService.ShowSuccess("Anasayfaya yönlendiriliyorsunuz...", "Giriş Başarılı.");
+                navManager.NavigateTo("/");
+                toastService.ShowSuccess("Anasayfaya yönlendiriliyorsunuz...", "Giriş Başarılı.");
 
+            }
+            else
+            {
+                toastService.ShowError("Hatalı kullanıcı adı veya şifre!", "Hata!");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            toastService.ShowError("Hatalı kullanıcı adı veya şifre!", "Hata!");
+            toastService.ShowError("Servise Erişilemiyor", "Hata!");
+
+            return;
         }
+
+
     }
 
 }

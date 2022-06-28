@@ -67,6 +67,8 @@ namespace SmartParkingSystem
             services.AddDbContext<SmartParkingSystemContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Default")));
             services.AddDbContext<SecurityContext>(options => options.UseInMemoryDatabase(databaseName: "SecurityDB"));
             services.AddSingleton<DatabaseSubscription<Entry>>();
+            services.AddSingleton<DatabaseSubscription<Config>>();
+            services.AddSingleton<DatabaseSubscription<User>>();
 
             services.AddSwaggerGen(c =>
             {
@@ -84,7 +86,9 @@ namespace SmartParkingSystem
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartParkingSystem v1"));
             }
 
-            //Veri tabanýndaki Entry tablosu takibe alýndý
+            //Middlewares for db subscription
+            app.UseDatabaseSubscription<DatabaseSubscription<Config>>("Config");
+            app.UseDatabaseSubscription<DatabaseSubscription<User>>("User");
             app.UseDatabaseSubscription<DatabaseSubscription<Entry>>("Entry");
 
             app.UseAuthentication();

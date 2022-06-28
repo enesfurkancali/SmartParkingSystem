@@ -3,8 +3,9 @@
 @inject IToastService toastService
 <h1 aria-label="kullanıcılar">KULLANICILAR</h1>
 
-@*<button class="btn btn-dark" @onclick="@show">yeni ekle</button>
-<br />*@
+<button class="btn btn-primary" @onclick="() => Update(user, true)">Yeni Kullanıcı Ekle</button>
+<br />
+<br />
 
 <table class="table table-striped">
     <thead class="thead-dark">
@@ -12,6 +13,7 @@
             <th aria-label="Kullanıcı Adı">Kullanıcı Adı</th>
             <th aria-label="Ad">Ad</th>
             <th aria-label="Soyad">Soyad</th>
+            <th aria-label="Güncelle">Güncelle</th>
             <th aria-label="Sil">Sil</th>
         </tr>
     </thead>
@@ -22,6 +24,7 @@
             <td aria-label="@usr.Username">@usr.Username</td>
             <td aria-label="@usr.Name">@usr.Name</td>
             <td aria-label="@usr.Surname">@usr.Surname</td>
+            <td><button class="btn btn-primary" aria-label="Güncelle" @onclick="() => Update(usr, false)">Güncelle</button></td>
             <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Delete(usr.Id)">Sil</button></td>
         </tr>
         }
@@ -31,59 +34,18 @@
 <hr />
 
 
-<div class="container-fluid h-100 " id="kullaniciEkle">
-    <div class="row justify-content-start align-items-baseline h-100">
-        <div class="col col-sm-6 col-lg-4 col-xl-3">
-            @*<img src="images/recycle-bin.png" />*@
 
-
-            <EditForm Model="@user" OnValidSubmit="AddUser">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-
-                <h5 aria-label="Yeni kullanıcı ekle">Yeni kullanıcı ekle</h5>
-
-                <div class="form-group">
-                    <InputText @bind-Value="user.Name" class="form-control form-control-" type="text" placeholder="Ad" />
-                </div>
-
-
-                <div class="form-group">
-                    <InputText @bind-Value="user.Surname" class="form-control form-control" type="text" placeholder="Soyad" />
-                </div>
-
-                <div class="form-group">
-                    <InputText @bind-Value="user.Username" class="form-control form-control" type="text" placeholder="Kullanıcı Adı" />
-                </div>
-
-                <div class="form-group">
-                    <InputText @bind-Value="user.Password" class="form-control form-control" type="password" placeholder="Şifre" />
-                </div>
-
-                @*<div class="form-group">
-                    <InputText @bind-Value="user.ConfirmPassword" class="form-control form-control" type="password" placeholder="Şifre (Tekrar)" />
-                </div>*@
-
-
-
-                <div class="form-group">
-                    <button class="btn btn-dark btn-block" aria-label="ekle" type="submit">Ekle</button>
-                </div>
-
-            </EditForm>
-        </div>
-    </div>
-
-</div>
 
 
 
 @code {
     private List<User>
     UserList = new List<User>();
+    [CascadingParameter] public IModalService Modal { get; set; }
 
     private User user = new User();
+    public HubConnection connection { get; set; }
+
 
     //[CascadingParameter] public IModalService Modal { get; set; }
 
@@ -92,7 +54,14 @@
         var result = await Http.GetFromJsonAsync<List<User>>("api/User/AllUsers");
         UserList = result.ToList();
 
+        connection = new HubConnectionBuilder().WithUrl("http://localhost:61818/parksishub").Build();
+        connection.On<List<User>>("recieveMessageUser", (message) =>
+        {
+            UserList = message;
 
+            StateHasChanged();
+        });
+        await connection.StartAsync();
 
     }
 
@@ -130,4 +99,21 @@
 
     }
 
+    public async Task Update(User user, bool isNew)
+    {
+        var title = "Kullanıcı Güncelle";
+        if (isNew)
+        {
+            user = new User();
+            title = "Yeni Kullanıcı Ekle";
+        }
+        var parameters = new ModalParameters();
+        parameters.Add("user", user);
+        Modal.Show<UserForm>(title, parameters);
+
+
+        //var result = await Http.GetFromJsonAsync<List<Config>>("api/Config/AllConfigs");
+        //ConfigList = result.ToList();
+        //Config = new Config();
+    }
 }

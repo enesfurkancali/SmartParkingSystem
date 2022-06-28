@@ -1,0 +1,98 @@
+﻿@inject HttpClient Http
+@inject IToastService toastService
+<div>
+
+    <EditForm Model="@user" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+
+        @*<h5 aria-label="Yeni kullanıcı ekle">Yeni kullanıcı ekle</h5>*@
+
+        <div class="form-group">
+            <InputText @bind-Value="user.Name" class="form-control form-control-" type="text" placeholder="Ad" />
+        </div>
+
+
+        <div class="form-group">
+            <InputText @bind-Value="user.Surname" class="form-control form-control" type="text" placeholder="Soyad" />
+        </div>
+
+        <div class="form-group">
+            <InputText @bind-Value="user.Username" class="form-control form-control" type="text" placeholder="Kullanıcı Adı" />
+        </div>
+
+        <div class="form-group">
+            <InputText @bind-Value="user.Password" class="form-control form-control" type="password" placeholder="Şifre" />
+        </div>
+
+        @*<div class="form-group">
+            <InputText @bind-Value="user.ConfirmPassword" class="form-control form-control" type="password" placeholder="Şifre (Tekrar)" />
+        </div>*@
+
+
+
+
+        <div class="form-group">
+            <button class="btn btn-dark btn-block" aria-label="Gönder" type="submit" @onclick="Close">Gönder</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+    [Parameter] public User? user{ get; set; }
+
+    //async Task Close() => await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+    async Task Cancel() => await BlazoredModal.CancelAsync();
+
+    async Task Close()
+    {
+        await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+        HandleValidSubmit();
+    }
+
+    public void HandleValidSubmit()
+    {
+        if (user.Id == Guid.Empty)
+            AddUser();
+        else
+            Update();
+    }
+
+    public async Task AddUser()
+    {
+        var result = await Http.PostAsJsonAsync("api/User/Add", user);
+
+        if (result.IsSuccessStatusCode)
+        {
+            var result2 = await Http.GetFromJsonAsync<List<User>>("api/User/AllUsers");
+            //UserList = result2.ToList();
+            user = new User();
+            //await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+         
+            toastService.ShowSuccess("Kaydedildi.", "BAŞARILI");
+        }
+        else
+        {
+            await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+            toastService.ShowError(" Kullanıcı zaten mevcut!", "HATA");
+        }
+    }
+
+    public async Task Update()
+    {
+        var result = await Http.PutAsJsonAsync("api/User/" + user.Id, user);
+        if (result.IsSuccessStatusCode)
+        {
+            user = new User();
+
+            toastService.ShowSuccess("Kayıt başarıyla güncellendi.", "BAŞARILI");
+        }
+        else
+        {
+            toastService.ShowError("Kayıt güncellenemedi.", "HATA");
+        }
+
+    }
+}

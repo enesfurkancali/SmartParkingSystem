@@ -54,15 +54,27 @@ namespace SmartParkingSystemAPI.Controllers
             _context.SaveChanges();
 
             return Ok();
+
         }
+
+        [HttpPost("AddEntries")]
+        public IActionResult AddEntries([FromBody] List<Entry> EntryList)
+        {
+            _context.Entries.AddRange(EntryList);
+            return Ok();
+        }
+
         [HttpPost("AddPlate")]
         public IActionResult AddPlate([FromBody] string plate)
         {
-            var entry = _context.Entries.SingleOrDefault(x => x.Plate == plate && x.CheckoutDate == null);
+            var entry = _context.Entries.FirstOrDefault(x => x.Plate == plate && x.CheckoutDate == null);
             if (entry is not null)
             {
                 entry.CheckoutDate = DateTime.Now;
-                entry.Price = 10; //fiyat hesaplat
+                TimeSpan diff =(TimeSpan)(entry.CheckoutDate - entry.CheckinDate);
+                CalculatePrice.price = 0;
+                CalculatePrice.priceList = _context.Configs.ToList();
+                entry.Price = CalculatePrice.Calculate(diff);
                 _context.Update(entry);
             }
             else
@@ -71,7 +83,7 @@ namespace SmartParkingSystemAPI.Controllers
                 entry.Id = Guid.NewGuid();
                 entry.CheckinDate = DateTime.Now;
                 entry.CheckoutDate = null;
-                entry.Plate = plate;
+                entry.Plate = plate.Trim();
                 entry.Price = 0;
                 _context.Add(entry);
             }

@@ -35,9 +35,22 @@ namespace SmartParkingSystemAPI.Subscription
 
                 SmartParkingSystemContext context = new SmartParkingSystemContext();
 
-                var veriList = context.Entries.OrderBy(x => x.CheckinDate).ToList();
-
-                await _hubContext.Clients.All.SendAsync("recieveMessage", veriList);
+                if (tableName == "Entry")
+                {
+                    var veriList = context.Entries.OrderBy(x => x.CheckinDate).ToList();
+                    await _hubContext.Clients.All.SendAsync("recieveMessageEntry", veriList);
+                }
+                else if (tableName=="User")
+                {
+                    var veriList = context.Users.OrderBy(x => x.Username).ToList();
+                    await _hubContext.Clients.All.SendAsync("recieveMessageUser", veriList);
+                }
+                else
+                {
+                    var veriList = context.Configs.OrderBy(x => x.Name).ToList();
+                    await _hubContext.Clients.All.SendAsync("recieveMessageConfig", veriList);
+                }
+               
             };
             _tableDependency.OnError += (o, e) =>
             {

@@ -1,0 +1,76 @@
+﻿@inject HttpClient Http
+@inject IToastService toastService
+<div>
+    <EditForm Model="@config" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+
+        @*<h5 aria-label="Tarife Güncelle">Tarife Güncelle</h5>*@
+
+        <div class="form-group">
+            <input @bind="config.Name" class="form-control form-control-" readonly type="text" placeholder="Name" />
+        </div>
+
+
+        <div class="form-group">
+            <input @bind="config.Value" class="form-control form-control" autofocus type="number" placeholder="Value" />
+        </div>
+
+
+
+        <div class="form-group">
+            <button class="btn btn-dark btn-block" aria-label="ekle" type="submit" @onclick="Close">Gönder</button>
+        </div>
+
+    </EditForm>
+    @*<button @onclick="Close" class="btn btn-primary">Close</button>
+    <button @onclick="Cancel" class="btn btn-secondary">Cancel</button>*@
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+    [Parameter] public Config? config { get; set; }
+    [Parameter] public List<Config?> ConfigList { get; set; }
+
+    async Task Close() {
+        await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+        Update();
+    }
+
+    async Task Cancel() => await BlazoredModal.CancelAsync();
+
+    public void HandleValidSubmit()
+    {
+        Update();
+    }
+
+    //public async Task Delete(Guid id)
+    //{
+    //    var result = await Http.DeleteAsync("api/Config/" + id);
+    //    if (result.IsSuccessStatusCode)
+    //    {
+    //        ConfigList.Remove(ConfigList.FirstOrDefault(x => x.Id == id));
+    //        toastService.ShowSuccess("Kayıt başarıyla silindi.", "BAŞARILI");
+
+    //    }
+    //    else
+    //    {
+    //        toastService.ShowError("Kayıt silinemedi.", "HATA");
+    //    }
+
+    //}
+    public async Task Update()
+    {
+        var result = await Http.PutAsJsonAsync("api/Config/" + config.Id, config);
+        if (result.IsSuccessStatusCode)
+        {
+            toastService.ShowSuccess("Kayıt başarıyla güncellendi.", "BAŞARILI");
+        }
+        else
+        {
+            toastService.ShowError("Kayıt güncellenemedi.", "HATA");
+        }
+
+    }
+}

@@ -90,7 +90,7 @@ else
         selectedTypeChanged();
 
         connection = new HubConnectionBuilder().WithUrl("http://localhost:61818/parksishub").Build();
-        connection.On<List<Entry>>("recieveMessage", (message) =>
+        connection.On<List<Entry>>("recieveMessageEntry", (message) =>
         {
             EntryList = message;
             count = EntryList.Where(x => x.CheckoutDate == null).Count();
@@ -98,33 +98,42 @@ else
 
             StateHasChanged();
         });
-        connection.On<string>("recievePlate", (plate) =>
+        connection.On<string>("recievePlate",  (plate) =>
         {
-            Modal.Show<AddPlate>(plate);
+            if (EntryList.Where(x=>x.CheckoutDate==null).Select(x=>x.Plate.Trim()).ToList().Contains(plate.Trim()))
+            {
+                var parameters = new ModalParameters();
+                parameters.Add("plate",plate);
+                Modal.Show<AddPlate>(plate.Trim(),parameters);
+            }
+            else
+            {
+                AddEntry(plate.Trim());
+            }
 
-
-            //count = EntryList.Where(x => x.CheckoutDate == null).Count();
             StateHasChanged();
         });
         await connection.StartAsync();
 
     }
 
-    public async Task AddEntry()
+    public async Task AddEntry(string plate)
     {
-        var result = await Http.PostAsJsonAsync("api/Entry/Add", entry);
+        entry = new Entry();
+        entry.Plate = plate;
+
+        var result = await Http.PostAsJsonAsync("api/Entry/AddPlate", plate);
 
         if (result.IsSuccessStatusCode)
         {
-            var result2 = await Http.GetFromJsonAsync<List<Entry>>("api/Entry/AllUsers");
-            EntryList = result2.ToList();
-            entry = new Entry();
+            //var result2 = await Http.GetFromJsonAsync<List<Entry>>("api/Entry/AllUsers");
+            //EntryList = result2.ToList();
 
-            toastService.ShowSuccess("Kaydedildi.", "BAŞARILI");
+            toastService.ShowSuccess(plate+" plakalı araç otoparka giriş yaptı.", "BAŞARILI");
         }
         else
         {
-            toastService.ShowError(" Kayıt zaten mevcut!", "HATA");
+            toastService.ShowError(plate + " plakalı araç otoparka giriş yapamadı.", "HATA");
         }
     }
 
