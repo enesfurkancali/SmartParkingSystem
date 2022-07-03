@@ -22,6 +22,7 @@ namespace SmartParkingSystemAPI.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         [HttpGet("AllEntries")]
         public IActionResult GetEntries()
         {
@@ -57,6 +58,7 @@ namespace SmartParkingSystemAPI.Controllers
 
         }
 
+        [AllowAnonymous]
         [HttpPost("AddEntries")]
         public IActionResult AddEntries([FromBody] List<Entry> EntryList)
         {
