@@ -34,7 +34,7 @@
 
 
         <div class="form-group">
-            <button class="btn btn-dark btn-block" aria-label="Gönder" type="submit" @onclick="Close">Gönder</button>
+            <button class="btn btn-dark btn-block" aria-label="Gönder" type="submit">Gönder</button>
         </div>
     </EditForm>
 </div>
@@ -49,7 +49,6 @@
     async Task Close()
     {
         await BlazoredModal.CloseAsync(ModalResult.Ok(true));
-        HandleValidSubmit();
     }
 
     public void HandleValidSubmit()
@@ -70,7 +69,7 @@
             //UserList = result2.ToList();
             user = new User();
             //await BlazoredModal.CloseAsync(ModalResult.Ok(true));
-         
+
             toastService.ShowSuccess("Kaydedildi.", "BAŞARILI");
         }
         else
@@ -78,6 +77,9 @@
             await BlazoredModal.CloseAsync(ModalResult.Ok(true));
             toastService.ShowError(" Kullanıcı zaten mevcut!", "HATA");
         }
+        await Close();
+
+
     }
 
     public async Task Update()
@@ -93,6 +95,9 @@
         {
             toastService.ShowError("Kayıt güncellenemedi.", "HATA");
         }
+        await Close();
+
+
 
     }
 }

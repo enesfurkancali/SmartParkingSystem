@@ -20,7 +20,7 @@
 
 
         <div class="form-group">
-            <button class="btn btn-dark btn-block" aria-label="ekle" type="submit" @onclick="Close">Gönder</button>
+            <button class="btn btn-dark btn-block" aria-label="ekle" type="submit">Gönder</button>
         </div>
 
     </EditForm>
@@ -35,7 +35,6 @@
 
     async Task Close() {
         await BlazoredModal.CloseAsync(ModalResult.Ok(true));
-        Update();
     }
 
     async Task Cancel() => await BlazoredModal.CancelAsync();
@@ -71,6 +70,8 @@
         {
             toastService.ShowError("Kayıt güncellenemedi.", "HATA");
         }
+
+        await Close();
 
     }
 }

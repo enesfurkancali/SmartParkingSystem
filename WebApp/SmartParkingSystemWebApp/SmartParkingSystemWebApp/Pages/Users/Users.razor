@@ -1,6 +1,8 @@
 ﻿@page "/Users"
 @inject HttpClient Http
 @inject IToastService toastService
+@implements IDisposable
+
 <h1 aria-label="kullanıcılar">KULLANICILAR</h1>
 
 <button class="btn btn-primary" @onclick="() => Update(user, true)">Yeni Kullanıcı Ekle</button>
@@ -20,13 +22,13 @@
     <tbody>
         @foreach (var usr in UserList)
         {
-        <tr>
-            <td aria-label="@usr.Username">@usr.Username</td>
-            <td aria-label="@usr.Name">@usr.Name</td>
-            <td aria-label="@usr.Surname">@usr.Surname</td>
-            <td><button class="btn btn-primary" aria-label="Güncelle" @onclick="() => Update(usr, false)">Güncelle</button></td>
-            <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Delete(usr.Id)">Sil</button></td>
-        </tr>
+            <tr>
+                <td aria-label="@usr.Username">@usr.Username</td>
+                <td aria-label="@usr.Name">@usr.Name</td>
+                <td aria-label="@usr.Surname">@usr.Surname</td>
+                <td><button class="btn btn-primary" aria-label="Güncelle" @onclick="() => Update(usr, false)">Güncelle</button></td>
+                <td><button class="btn btn-danger" aria-label="Sil" @onclick="() => Delete(usr.Id)">Sil</button></td>
+            </tr>
         }
     </tbody>
 </table>

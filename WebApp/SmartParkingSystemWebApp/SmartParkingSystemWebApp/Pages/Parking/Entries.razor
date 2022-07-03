@@ -2,6 +2,8 @@
 @inject HttpClient Http
 @inject IToastService toastService
 @inject IModalService modalService
+@implements IDisposable
+
 <h1 aria-label="kullanıcılar">Kayıtlar</h1>
 <div class="container">
     <div class="row">
@@ -19,7 +21,7 @@
     </div>
 </div>
 
-<input type="checkbox" hidden class="btn-check" id="btn-check-outlined"  @bind="isLive"autocomplete="off">
+<input type="checkbox" hidden class="btn-check" id="btn-check-outlined" @bind="isLive" autocomplete="off">
 @if (isLive is false)
     cssClass = "btn-outline-primary";
 else
@@ -86,7 +88,7 @@ else
         EntryList = result.ToList();
         count = EntryList.Where(x => x.CheckoutDate == null).Count();
 
-        //currentEntryList = EntryList;    
+        //currentEntryList = EntryList;
         selectedTypeChanged();
 
         connection = new HubConnectionBuilder().WithUrl("http://localhost:61818/parksishub").Build();
@@ -98,13 +100,13 @@ else
 
             StateHasChanged();
         });
-        connection.On<Entry>("recievePlate",  (entry) =>
+        connection.On<Entry>("recievePlate", (entry) =>
         {
-            if (EntryList.Where(x=>x.CheckoutDate==null).Select(x=>x.Plate.Trim()).ToList().Contains( entry.Plate.Trim()))
+            if (EntryList.Where(x => x.CheckoutDate == null).Select(x => x.Plate.Trim()).ToList().Contains(entry.Plate.Trim()))
             {
                 var parameters = new ModalParameters();
-                parameters.Add("entry",entry);
-                Modal.Show<AddPlate>("Araç Çıkışı",parameters);
+                parameters.Add("entry", entry);
+                Modal.Show<AddPlate>("Araç Çıkışı", parameters);
             }
             else
             {
@@ -117,10 +119,10 @@ else
 
     }
 
-    //public void Dispose()
-    //{
-    //    connection.StopAsync();
-    //}
+    public void Dispose()
+    {
+        connection.StopAsync();
+    }
 
 
     public async Task AddEntry(string plate)
@@ -135,7 +137,7 @@ else
             //var result2 = await Http.GetFromJsonAsync<List<Entry>>("api/Entry/AllUsers");
             //EntryList = result2.ToList();
 
-            toastService.ShowSuccess(plate+" plakalı araç otoparka giriş yaptı.", "BAŞARILI");
+            toastService.ShowSuccess(plate + " plakalı araç otoparka giriş yaptı.", "BAŞARILI");
         }
         else
         {
