@@ -95,6 +95,12 @@
 
     }
 
+    public void Dispose()
+    {
+        connection.StopAsync();
+    }
+
+
     //public async Task AddConfig()
     //{
     //    var result = await Http.PostAsJsonAsync("api/Config/Add", Config);
@@ -135,7 +141,7 @@
     {
         var parameters = new ModalParameters();
         parameters.Add("config", config);
-        var r=Modal.Show<UpdateConfigForm>("Tarife Güncelle", parameters);
+        var r = Modal.Show<UpdateConfigForm>("Tarife Güncelle", parameters);
 
         Config = new Config();
     }
