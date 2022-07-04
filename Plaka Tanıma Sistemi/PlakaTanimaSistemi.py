@@ -1,10 +1,32 @@
+import datetime
+
 import cv2
 from skimage import transform
 import numpy as np
 import tensorflow as tf
 from keras.models import Sequential
 from tensorflow.python.keras import layers, activations
+from signalrcore.hub_connection_builder import HubConnectionBuilder
+import VideoStream
+import logging
+import requests
+import json
+from datetime import date
 
+class PlateData:
+    def __init__(self,Plate,CheckinDate):
+        self.Plate = Plate
+        self.CheckinDate = CheckinDate
+def listToJsonData(list):
+    dictt = []
+    for i in list:
+        dictt.append(i.__dict__)
+    try:
+        json_data = json.dumps(dictt, sort_keys=True, default=str)
+        return json_data
+    except:
+        print("JSON verisine çevrilemedi.")
+        return ""
 def controlPlate(plate):
     allLetter = "ABCDEFGHIJKLMNOPRSTUVYZ"
     if (len(plate) > 5):
@@ -32,6 +54,44 @@ def controlPlate(plate):
     else:
         return False
 
+def trytoConnectServer(url,hub_connection):
+    try:
+        hub_connection.start()
+        response_API = requests.get('http://localhost:61818/api/Entry/AllEntries')
+        if (response_API.status_code == 200):
+            data = response_API.text
+            parse_json = json.loads(data)
+            for i in parse_json:
+                if (i['checkoutDate'] is None):
+                    inPlateList.append(i['plate'])
+        else:
+            print("Mevcut veriler cekilemedi. Status Code: " + response_API.status_code)
+        return True
+    except:
+        print("Sunucu ile baglanti kurulamadi (GET)")
+        print("Sunucu ile baglanti kurulamadi. (HUB)")
+        return False
+def sendData(hub_connection,data,url):
+    if(data != None and hub_connection != None):
+        hub_connection.send("SendMessageAsync", [data])
+        print(f"{data} sunucuya iletildi.")
+        if (lastplate not in inPlateList):
+            inPlateList.append((lastplate))
+        return 1
+    else:
+        try:
+            json_data = listToJsonData(data)
+            if(json_data != ""):
+                response = requests.post(url, json= json_data)
+                if(response.status_code == 200):
+                    print("Kaydedilen plakalar sunucuya gonderildi.")
+                    return 1
+                else:
+                    print("Kaydedilen plakalar sunucuya gonderilemedi.")
+                    return -1
+        except:
+            print("Sunucu ile baglanti kurulamadi (POST).")
+            return -1
 
 def getPlate(cnts):
     lastPlate = tuple()
@@ -41,20 +101,17 @@ def getPlate(cnts):
         peri = cv2.arcLength(c, True)
         approx = cv2.approxPolyDP(c, 0.02 * peri, True)
         if len(approx) == 4:
-            (x, y, w, h) = cv2.boundingRect(approx)
-            if (float(w) / h >= 4):
-                if (plateExist == False):
+            if (plateExist == False):
+                lastPlate = approx
+                lastPlateArea = cv2.contourArea(c)
+                plateExist = True
+            else:
+                possiblePlateArea = cv2.contourArea(c)
+                if(possiblePlateArea == 0):
+                    return lastPlate
+                if (lastPlateArea / possiblePlateArea > 1 and lastPlateArea / possiblePlateArea < 2):
                     lastPlate = approx
-                    lastPlateArea = cv2.contourArea(c)
-                    plateExist = True
-                else:
-                    possiblePlateArea = cv2.contourArea(c)
-                    if(possiblePlateArea == 0):
-                        return lastPlate
-                    if (lastPlateArea / possiblePlateArea > 1 and lastPlateArea / possiblePlateArea < 2):
-                        lastPlate = approx
     return lastPlate
-
 
 def getPlateNumfromNum(num):
     if num < 10:
@@ -77,7 +134,6 @@ def getPlateNumfromNum(num):
             return 'Z'
         else:
             return chr(num)
-
 
 def createModel():
     model = Sequential()
@@ -118,12 +174,11 @@ def returnPlateNumber(image, model):
     if len(image.shape) == 3 and image.shape[2] == 3:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image = cv2.resize(image, (350, 83))
-    cv2.imshow('Denek2', image)
     blur = cv2.GaussianBlur(image, (3, 3), 0)
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
     kernel = np.ones((5, 5), np.uint8)
     opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-    cv2.imshow('Denek3', opening)
+    cv2.imshow('Plaka', opening)
     cnts = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
@@ -144,11 +199,11 @@ def returnPlateNumber(image, model):
     mode = max(modeList, key=modeList.get)
     norContourList = [item for item in contourList if item[1] > (mode - 3) and item[1] < (mode + 3)]
     if (len(norContourList) == 7 or len(norContourList) == 8):
-        # print("Baslangic")
+        #print("Baslangic")
         norContourList.sort(key=lambda obj: obj[0])
-        # print("İlk Harf Sayisi:", len(contourList))
-        # print("Son Harf Sayisi:", len(norContourList))
-        # print("Mod:", mode)
+        #print("İlk Harf Sayisi:", len(contourList))
+        #print("Son Harf Sayisi:", len(norContourList))
+        #print("Mod:", mode)
         for i in norContourList:
             # print("X", i[0], "Y", i[1], "W:", i[2], "H:", i[3])
             ROI = 255 - opening[i[1]:i[1] + i[3], i[0]:i[0] + i[2]]
@@ -160,8 +215,8 @@ def returnPlateNumber(image, model):
             # print("Ekledim")
             platenum = getPlateNumfromNum(pred)
             platenumber += platenum
-        # print(platenumber)
-        # print("Bitis")
+        #print(platenumber)
+        #print("Bitis")
         contourList = []
         norContourList = []
         if (controlPlate(platenumber)):
@@ -173,33 +228,84 @@ def returnPlateNumber(image, model):
 
 
 lastplate = ""
+hub_connection = None
+connectedStatus = False
+url = 'http://localhost:61818/parksishub'
+try:
+     hub_connection = HubConnectionBuilder().with_url(url).build()
+     hub_connection.on_open(lambda: print("Sunucu ile baglantı kuruldu."))
+     hub_connection.on_close(lambda: print("Baglanti kapandi."))
+     hub_connection.on_error(lambda data: print(f"Hata meydana geldi: {data.error}"))
+     hub_connection.start()
+     connectedStatus = True
+except:
+     print("Sunucu ile baglanti kurulamadi. (HUB)")
+     connectedStatus = False
+inPlateList = []
+sendPlateList = []
+post_API = 'http://localhost:61818/api/Entry/AddEntries'
+try:
+    response_API = requests.get('http://localhost:61818/api/Entry/AllEntries')
+    if(response_API.status_code == 200):
+        data = response_API.text
+        parse_json = json.loads(data)
+        for i in parse_json:
+            if(i['checkoutDate'] is None):
+                inPlateList.append(i['plate'])
+    else:
+        print("Mevcut veriler cekilemedi. Status Code: "+response_API.status_code)
+except:
+    print("Sunucu ile baglanti kurulamadi (GET)")
 model = createModel()
 model.build((1, 256, 256, 1))
-model.load_weights("son_model.h5")
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+model.load_weights("ysa_model.h5")
+video_stream_widget = VideoStream.VideoStreamWidget()
 while True:
-    ret, frame = cap.read()
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    edged = cv2.Canny(blur, 10, 200)
-    contours, _ = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
-    n_plate_cnt = getPlate(contours)
-    if (len(n_plate_cnt) < 4):
-        continue
-    (x, y, w, h) = cv2.boundingRect(n_plate_cnt)
-    possible_plate = gray[y:y + h, x:x + w]
-    cv2.imshow('Denek', possible_plate)
-    cv2.drawContours(frame, [n_plate_cnt], -1, (0, 255, 0), 3)
-    platenum = ""
-    platenum = returnPlateNumber(possible_plate, model)
-    if (platenum != ""):
-        if (lastplate != platenum):
-            lastplate = platenum
-            print(lastplate)
-            sendPlates = "'" + lastplate + "'"
-    cv2.imshow("Kamera", frame)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
-cap.release()
+    try:
+        video_stream_widget.show_frame()
+        frame = video_stream_widget.return_frame()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        hist = cv2.equalizeHist(gray)
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        edged = cv2.Canny(blur, 10, 200)
+        contours, _ = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
+        n_plate_cnt = getPlate(contours)
+        if(len(n_plate_cnt) == 0):
+            continue
+        (x, y, w, h) = cv2.boundingRect(n_plate_cnt)
+        possible_plate = gray[y:y + h, x:x + w]
+        cv2.imshow('Plaka Ilk', possible_plate)
+        cv2.drawContours(frame, [n_plate_cnt], -1, (0, 255, 0), 3)
+        platenum = ""
+        platenum = returnPlateNumber(possible_plate, model)
+        if (platenum != ""):
+             if (lastplate != platenum):
+                 lastplate = platenum
+                 print(lastplate)
+                 if(hub_connection != None and connectedStatus == False):
+                       connectedStatus = trytoConnectServer(url,hub_connection)
+                 try:
+                       sendData(hub_connection,lastplate,None)
+                       if(lastplate in inPlateList):
+                           inPlateList.remove(lastplate)
+                       else:
+                           inPlateList.append((lastplate))
+                       if(len(sendPlateList) > 0):
+                            response_msg = sendData(None,sendPlateList,post_API)
+                            if(response_msg == 1):
+                               sendPlateList.clear()
+
+                 except:
+                      print(f"{lastplate} sunucuya iletilemedi.")
+                      connectedStatus = False
+                      if(lastplate not in inPlateList):
+                          inPlateList.append((lastplate))
+                          sendPlateList.append(PlateData(lastplate,datetime.datetime.now()))
+                          print("Gonderilmek uzere bellege eklendi.")
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+    except:
+        pass
+hub_connection.stop()
 cv2.destroyAllWindows()
